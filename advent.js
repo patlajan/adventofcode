@@ -29,8 +29,97 @@ String.prototype.replaceAt = function(index, character) {
 			return str + 'Count: ' + count + '<br>\n';
 		}
 
+		var createTestCase = function(method, expectedOutput, inputParams) {
+			return {
+				method: method,
+				expectedOutput: expectedOutput,
+				arguments: Array.prototype.slice.call(arguments, 2)
+			};
+		}
+
+		var runTests = function(testCases) {
+				for(var i in testCases) {
+					var test = testCases[i];
+					var res = test.method.apply(null, test.arguments);
+					if(res == test.expectedOutput) {
+						console.log('PASSED!');
+					} else {
+						console.log('FAILED!');
+						console.log('Expected: ' + test.expectedOutput);
+						console.log('Actual:   ' + res);
+					}
+				}
+		}
+
+		window.onload = () => refresh({value: input.value});
+
 		function refresh(e) {
-			div.innerHTML = day11(e.value);
+			div.innerHTML = day14(e.value);
+		}
+
+		function day14(input) {
+			var has5 = function(md5) {
+				var res = /(\w)\1\1\1\1/.exec(md5);
+				if( res )
+					return res[1];
+
+				return false;
+			};
+
+			var has3 = function(md5, symbol) {
+				return md5.indexOf('' + symbol + symbol + symbol) >= 0;
+			};
+
+			var testCases = [];
+
+			testCases.push(createTestCase(has5, 3, "11 33333 22"));
+			testCases.push(createTestCase(has5, false, "113333 322"));
+			testCases.push(createTestCase(has5, 1, "11332322 11111 2"));
+			testCases.push(createTestCase(has5, 1, "11111 33333"));
+
+			testCases.push(createTestCase(has3, true , "11 333 22", 3));
+			testCases.push(createTestCase(has3, false, "11 333 22", 2));
+			testCases.push(createTestCase(has3, false, "11 33 3 22",  3));
+			testCases.push(createTestCase(has3, true , "11332322 111 2", 1));
+			testCases.push(createTestCase(has3, false, "11 33 3 22 111 2", 3));
+
+			runTests(testCases);
+
+			var last1000 = [];
+
+			var addTo1000 = function(hash) {
+				last1000.push(hash);
+
+				if(last1000.length > 1000)
+					last1000.shift();
+			};
+
+			var find3 = function(symbol) {
+				for(var i in last1000) {
+					if(has3(last1000[i], symbol))
+						return last1000[i];
+				}
+			}
+
+			//the 5 symbol hash may cover more than one 3 symbol hashe
+
+			var salt = input.trim();
+			var keys = 0;
+			var i = 0;
+			while(i++ < 100000) {
+				var stream = md5(salt + '' + i);
+				addTo1000(stream);
+				var sym5 = has5(stream)
+				if(sym5) {
+					if(find3(sym5)) {
+						keys++;
+						if( keys == 64 )
+							return i;	
+						}
+				}
+			}
+
+			return false;
 		}
 		
 		function day13(input) {
@@ -172,8 +261,6 @@ String.prototype.replaceAt = function(index, character) {
 			return registers.a;
 		}
 
-		window.onload = () => day11(input.value);
-
 		function day11(input) {
 			var getInitialState = function(input) {
 
@@ -233,38 +320,6 @@ String.prototype.replaceAt = function(index, character) {
 			}
 
 			var testCases = {};
-
-			var createTestCase = function(method, expectedOutput, inputParams) {
-				arr = testCases[method] || [];
-				arr.push( {
-					method: method,
-					expectedOutput: expectedOutput,
-					arguments: Array.prototype.slice.call(arguments, 2)
-				} );
-
-				testCases[method] = arr;
-			}
-
-			var runTests = function(method) {
-				var runTest = function(test) {
-					var res = test.method.apply(null, test.arguments);
-					if(res == test.expectedOutput) {
-						console.log('PASSED!');
-					} else {
-						console.log('FAILED!');
-						console.log('Expected: ' + test.expectedOutput);
-						console.log('Actual:   ' + res);
-					}
-				};
-
-				if(method)
-					for(var i in testCases[method])
-						runTest(testCases[method][i]);
-				else
-					for(var i in testCases)
-						for(var j in testCases[i])
-							runTest(testCases[i][j]);	
-			}
 
 			var sortHash = function(hash) {
 
@@ -765,7 +820,7 @@ rotate column x=1 by 1
 			while(true)
 			{
 				i++;
-				var h = md5(input + i)
+				var h = md5(input + i);
 				if(h.startsWith('00000'))
 				{
 					var pos = parseInt(h.charAt(5));
