@@ -41,7 +41,7 @@ String.prototype.replaceAt = function(index, character) {
 				for(var i in testCases) {
 					var test = testCases[i];
 					var res = test.method.apply(null, test.arguments);
-					if(res == test.expectedOutput) {
+					if(res == test.expectedOutput || res && test.expectedOutput && res.toString() == test.expectedOutput.toString()) {
 						console.log('PASSED!');
 					} else {
 						console.log('FAILED!');
@@ -51,39 +51,26 @@ String.prototype.replaceAt = function(index, character) {
 				}
 		}
 
-		window.onload = () => refresh({value: input.value});
+		// window.onload = () => refresh({value: input.value});
 
 		function refresh(e) {
 			div.innerHTML = day14(e.value);
 		}
 
 		function day14(input) {
-			var has5 = function(md5) {
-				var res = /(\w)\1\1\1\1/.exec(md5);
+
+			var has5 = function(md5, symbol) {
+				return md5.indexOf('' + symbol + symbol + symbol + symbol + symbol) >= 0;
+			};
+
+			var has3 = function(md5) {
+				var res = /(\w)\1\1/.exec(md5);
+
 				if( res )
 					return res[1];
 
 				return false;
 			};
-
-			var has3 = function(md5, symbol) {
-				return md5.indexOf('' + symbol + symbol + symbol) >= 0;
-			};
-
-			var testCases = [];
-
-			testCases.push(createTestCase(has5, 3, "11 33333 22"));
-			testCases.push(createTestCase(has5, false, "113333 322"));
-			testCases.push(createTestCase(has5, 1, "11332322 11111 2"));
-			testCases.push(createTestCase(has5, 1, "11111 33333"));
-
-			testCases.push(createTestCase(has3, true , "11 333 22", 3));
-			testCases.push(createTestCase(has3, false, "11 333 22", 2));
-			testCases.push(createTestCase(has3, false, "11 33 3 22",  3));
-			testCases.push(createTestCase(has3, true , "11332322 111 2", 1));
-			testCases.push(createTestCase(has3, false, "11 33 3 22 111 2", 3));
-
-			runTests(testCases);
 
 			var last1000 = [];
 
@@ -94,28 +81,76 @@ String.prototype.replaceAt = function(index, character) {
 					last1000.shift();
 			};
 
-			var find3 = function(symbol) {
-				for(var i in last1000) {
-					if(has3(last1000[i], symbol))
+			var find5 = function(symbol) {
+				for(var i = 1; i < last1000.length; i++) {
+					if(has5(last1000[i], symbol))
 						return last1000[i];
 				}
+
+				return false;
 			}
 
+			var keys = 0;
 			//the 5 symbol hash may cover more than one 3 symbol hashe
+			var checkForKeys = function(hash) {
+				if(last1000.length < 1000)
+					return false;
+
+				var symbol = has3(last1000[0]);
+				if(symbol && find5(symbol)) {
+					last1000.shift();
+					keys++;
+					return keys;
+				}
+
+				return false;
+			};
+
+			var getHash_1 = function(input) {
+				return md5(input);
+			};
+
+			var getHash_2 = function(input) {
+				var res = input;
+				for(var i = 0; i <= 2016; i++) {
+					res = md5(res);
+				}
+				return res;
+			};
+
+			var testCases = [];
+
+			testCases.push(createTestCase(has3, 3, "11 333 22"));
+			testCases.push(createTestCase(has3, false, "11 33 22"));
+			testCases.push(createTestCase(has3, 1, "11332322 11111 2"));
+			testCases.push(createTestCase(has3, 1, "11111 33333"));
+
+			testCases.push(createTestCase(has5, false, "11 3333 22", 3));
+			testCases.push(createTestCase(has5, true , "11 33333 22", 3));
+			testCases.push(createTestCase(has5, false, "11 33333 22", 2));
+			testCases.push(createTestCase(has5, false, "11 33 333 22",  3));
+			testCases.push(createTestCase(has5, true , "11332322 11111 2", 1));
+			testCases.push(createTestCase(has5, false, "11 33 3 22 111 2", 3));
+
+			testCases.push(createTestCase(getHash_2, 'a107ff634856bb300138cac6568c0f24', "abc0"));
+
+			runTests(testCases);
 
 			var salt = input.trim();
-			var keys = 0;
+			var res = '';
 			var i = 0;
+			var t = (new Date()).getTime();
 			while(i++ < 100000) {
-				var stream = md5(salt + '' + i);
+				var stream = getHash_1(salt + '' + i);
 				addTo1000(stream);
-				var sym5 = has5(stream)
-				if(sym5) {
-					if(find3(sym5)) {
-						keys++;
-						if( keys == 64 )
-							return i;	
-						}
+				if(checkForKeys()) {
+					res += (i - 999) + ', '
+				}
+
+				if(keys == 64) {
+					console.log('Finished in: ' + ((new Date()).getTime() - t) / 1000 + ' seconds');
+					console.log('Result: ' + res);
+					return i - 999;	
 				}
 			}
 
