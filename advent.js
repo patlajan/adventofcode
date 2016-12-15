@@ -51,10 +51,44 @@ String.prototype.replaceAt = function(index, character) {
 				}
 		}
 
-		// window.onload = () => refresh({value: input.value});
+		window.onload = () => refresh({value: input.value});
 
 		function refresh(e) {
-			div.innerHTML = day14(e.value);
+			div.innerHTML = day15(e.value);
+		}
+
+		function day15(input) {
+			var discs = {};
+			var formulas = [];
+			var lines = input.trim().split('\n');
+			var reg = /.*#(\d+) has (\d+) positions.*position (\d+)\./;
+			for(var i in lines) {
+				var res = reg.exec(lines[i]);
+				discs[res[1]] = {
+					posCount: res[2],
+					startPos: res[3]
+				};
+				(function(startIndex, positionsCount, index) {
+					formulas.push(function(offset) {
+						return (parseInt(startIndex) + parseInt(index)
+							+ parseInt(offset)) % parseInt(positionsCount);
+					});
+				})(res[1], res[2], res[3]);
+			}
+
+			var i = 0;
+			while(true) {
+				var found = true;
+				for(var j in formulas) {
+					if(formulas[j](i) != 0) {
+						found = false;
+						break;
+					}
+				}
+				if(found)
+					return i;
+				i++;
+			}
 		}
 
 		function day14(input) {
