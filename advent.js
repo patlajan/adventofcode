@@ -1,7 +1,3 @@
-String.prototype.replaceAt = function(index, character) {
-	    	return this.substr(0, index) + character + this.substr(index + character.length);
-		}
-
 		var div = document.getElementById("div");
 		var input = document.getElementById("input");
 		div.innerHTML = "asd";
@@ -54,7 +50,164 @@ String.prototype.replaceAt = function(index, character) {
 		window.onload = () => refresh({value: input.value});
 
 		function refresh(e) {
-			div.innerHTML = day17(e.value);
+			div.innerHTML = day19(e.value);
+		}
+		function day19(input) {
+			var p01 = function(elves) {
+				var arr = [];
+				for(var i = 1; i < elves + 1; i ++)
+					arr.push(i);
+
+				while(arr.length > 1) {
+					arr.push(arr.shift());
+					arr.shift();
+				} 
+
+				return arr[0];
+			};
+
+			var p1 = function(elves) {
+				var next = 1;
+				while( next < elves ) {
+					next = next * 2 + 1;
+				}
+
+				return elves * 2 - next;
+			};
+
+			var p02 = function(elves) {
+				var arr = [];
+				for(var i = 1; i < elves + 1; i ++)
+					arr.push(i);
+
+				while(arr.length > 1) {
+					arr.splice(Math.floor(arr.length / 2), 1);
+					arr.push(arr.shift());
+				} 
+
+				return arr[0];
+			};
+
+			var p2 = function(elves) {
+				var next = 1;
+				while( next < elves ) {
+					next *= 3;
+				}
+
+				for( var i = next; i > elves; i-- ) {
+					if( next * 2 > i ) {
+						next -= 2;
+					}
+					else {
+						next--;
+					}
+				}
+
+				return next;
+			};
+
+
+			var testCases = [];
+
+			// testCases.push(createTestCase(p01, 1, 4));
+			// testCases.push(createTestCase(p01, 3, 5));
+			// testCases.push(createTestCase(p01, 5, 6));
+			// testCases.push(createTestCase(p01, 7, 7));
+			// testCases.push(createTestCase(p01, 3, 9));
+			// testCases.push(createTestCase(p01, 7, 11));
+			// testCases.push(createTestCase(p01, 11, 13));
+			// testCases.push(createTestCase(p01, 15, 15));
+			// testCases.push(createTestCase(p01, 3, 17));
+
+			// testCases.push(createTestCase(p01, 1, 8));
+			// testCases.push(createTestCase(p01, 9, 12));
+
+			// testCases.push(createTestCase(p1, 1, 4));
+			// testCases.push(createTestCase(p1, 3, 5));
+			// testCases.push(createTestCase(p1, 5, 6));
+			// testCases.push(createTestCase(p1, 7, 7));
+			// testCases.push(createTestCase(p1, 3, 9));
+			// testCases.push(createTestCase(p1, 7, 11));
+			// testCases.push(createTestCase(p1, 11, 13));
+			// testCases.push(createTestCase(p1, 15, 15));
+			// testCases.push(createTestCase(p1, 3, 17));
+
+			// testCases.push(createTestCase(p1, 1, 8));
+			// testCases.push(createTestCase(p1, 9, 12));
+			// testCases.push(createTestCase(p1, 9, 3005290));
+
+			// testCases.push(createTestCase(p02, 1, 4));
+			// testCases.push(createTestCase(p02, 2, 5));
+			// testCases.push(createTestCase(p02, 3, 6));
+			// testCases.push(createTestCase(p02, 5, 7));
+			// testCases.push(createTestCase(p02, 7, 8));
+			// testCases.push(createTestCase(p02, 9, 9));
+			// testCases.push(createTestCase(p02, 1, 10));
+			// testCases.push(createTestCase(p02, 2, 11));
+			// testCases.push(createTestCase(p02, 3, 12));
+			// testCases.push(createTestCase(p02, 4, 13));
+			// testCases.push(createTestCase(p02, 5, 14));
+			// testCases.push(createTestCase(p02, 6, 15));
+
+			testCases.push(createTestCase(p2, 1, 4));
+			testCases.push(createTestCase(p2, 2, 5));
+			testCases.push(createTestCase(p2, 3, 6));
+			testCases.push(createTestCase(p2, 5, 7));
+			testCases.push(createTestCase(p2, 7, 8));
+			testCases.push(createTestCase(p2, 9, 9));
+			testCases.push(createTestCase(p2, 1, 10));
+			testCases.push(createTestCase(p2, 2, 11));
+			testCases.push(createTestCase(p2, 3, 12));
+			testCases.push(createTestCase(p2, 4, 13));
+			testCases.push(createTestCase(p2, 5, 14));
+			testCases.push(createTestCase(p2, 6, 15));
+
+			testCases.push(createTestCase(p2, '??', 3005290));
+			
+			runTests(testCases);
+
+			// for(var i = 0; i <= 100; i++) {
+			// 	var res = p02(i);
+			// 	// if( i == res )
+			// 		console.log(i + ': ' + res);
+			// }
+		}
+
+		function day18(input) {
+			var d1 = function(rows, firstLine) {
+				var currentLine = '.' + firstLine + '.';
+				var mines = currentLine.match(/\./g).length - 2;
+
+				for(var i = 1; i < rows; i++) {
+					var newLine = '.';
+
+					for(var j = 1; j < currentLine.length - 1; j++) {
+						if( currentLine[j - 1] == '^' && currentLine[j] == '^' && currentLine[j + 1] == '.'
+						 || currentLine[j - 1] == '.' && currentLine[j] == '^' && currentLine[j + 1] == '^'
+						 || currentLine[j - 1] == '^' && currentLine[j] == '.' && currentLine[j + 1] == '.'
+						 || currentLine[j - 1] == '.' && currentLine[j] == '.' && currentLine[j + 1] == '^' )
+							newLine += '^';
+						else 
+							newLine += '.';
+						}
+
+					newLine += '.';
+					mines += newLine.match(/\./g).length - 2;
+					currentLine = newLine;
+				}
+
+				return mines;
+			};
+
+			var [rows, currentLine] = input.split('\n');
+
+			var testCases = [];
+			testCases.push(createTestCase(d1, 6, '3', '..^^.'));
+			testCases.push(createTestCase(d1, 38, '10', '.^^.^.^^^^'));
+			
+			//runTests(testCases);
+
+			return d1(rows, currentLine);
 		}
 
 		function day17(input) {
@@ -95,16 +248,40 @@ String.prototype.replaceAt = function(index, character) {
 				var res = [];
 				recur('', 0, 0, res);
 
-				return res.reduce((a,b)=>Math.min(a.length,b.length));
+				return res;
 			};
 
+			var d1 = function(input) {
+				var res = go(input);
+				var min = res[0];
+
+				res.reduce((a,b)=> b.length < min.length ? min = b : b, '');
+
+				return min;
+			};
+
+			var d2 = function(input) {
+				var res = go(input);
+				var max = res[0];
+
+				res.reduce((a,b)=> b.length > max.length ? max = b : b, '');
+
+				return max.length;
+			};
+
+
 			var testCases = [];
-			testCases.push(createTestCase(go, 'DDRRRD', "ihgpwlah"));
-			testCases.push(createTestCase(go, 'DDUDRLRRUDRD', "kglvqrro"));
-			testCases.push(createTestCase(go, 'DRURDRUDDLLDLUURRDULRLDUUDDDRR', "ulqzkmiv"));
+			testCases.push(createTestCase(d1, 'DDRRRD', "ihgpwlah"));
+			testCases.push(createTestCase(d1, 'DDUDRLRRUDRD', "kglvqrro"));
+			testCases.push(createTestCase(d1, 'DRURDRUDDLLDLUURRDULRLDUUDDDRR', "ulqzkmiv"));
+
+			testCases.push(createTestCase(d2, 370, "ihgpwlah"));
+			testCases.push(createTestCase(d2, 492, "kglvqrro"));
+			testCases.push(createTestCase(d2, 830, "ulqzkmiv"));
+			
 			// runTests(testCases);
 
-			return go(input);
+			return d2(input);
 		}
 
 		function day16(input) {
@@ -961,6 +1138,9 @@ rotate column x=1 by 1
 
 		function day5_(input, update)
 		{
+			String.prototype.replaceAt = function(index, character) {
+	    	return this.substr(0, index) + character + this.substr(index + character.length);
+		}
 			// input = 'ffykfhsq';
 			var pass = '________';
 			var counter = 0;
