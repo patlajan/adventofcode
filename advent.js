@@ -54,7 +54,86 @@ String.prototype.replaceAt = function(index, character) {
 		window.onload = () => refresh({value: input.value});
 
 		function refresh(e) {
-			div.innerHTML = day15(e.value);
+			div.innerHTML = day17(e.value);
+		}
+
+		function day17(input) {
+
+			var go = function (input) {
+				var pass = input.trim();
+				var width = 4;
+				var height = 4;
+				var visited = {};
+
+				var recur = function(state, x, y, res) {
+					if( visited[state] || x < 0 || y < 0 || x >= width || y >= height )
+						return;
+
+					if( x == width - 1 && y == height - 1) {
+						res.push(state);
+						return;
+					}
+
+					visited[state] = true;
+					var result = md5(pass + state);
+
+					if( 'bcdef'.includes(result[0] ) ) {
+						recur(state + 'U', x, y - 1, res);
+					}
+					if( 'bcdef'.includes(result[1] ) ) {
+						recur(state + 'D', x, y + 1, res);
+					}
+					if( 'bcdef'.includes(result[2] ) ) {
+						recur(state + 'L', x - 1, y, res);
+					}
+					if( 'bcdef'.includes(result[3] ) ) {
+						recur(state + 'R', x + 1, y, res);
+					}
+
+					visited[state] = false;
+				};
+				var res = [];
+				recur('', 0, 0, res);
+
+				return res.reduce((a,b)=>Math.min(a.length,b.length));
+			};
+
+			var testCases = [];
+			testCases.push(createTestCase(go, 'DDRRRD', "ihgpwlah"));
+			testCases.push(createTestCase(go, 'DDUDRLRRUDRD', "kglvqrro"));
+			testCases.push(createTestCase(go, 'DRURDRUDDLLDLUURRDULRLDUUDDDRR', "ulqzkmiv"));
+			// runTests(testCases);
+
+			return go(input);
+		}
+
+		function day16(input) {
+			//10101 too low;
+
+			var a = input;
+			var minLen = 35651584;
+			var b = '';
+			while(a.length < minLen) {
+				a += '0' 
+				+ a.split('').reverse().join('')
+				.replace(/0/g, '#').replace(/1/g, '0').replace(/#/g, '1');
+			}
+			
+			var checkSum = a.substr(0, minLen);
+			while(checkSum.length % 2 == 0) {
+				var newCheckSum = '';
+				for(var i = 0; i < checkSum.length; i+=2) {
+					if(checkSum[i] == checkSum[i+1])
+						newCheckSum += 1;
+					else 
+						newCheckSum += 0;
+				}
+
+				checkSum = newCheckSum;
+				console.log(checkSum);
+			}
+
+			return checkSum;
 		}
 
 		function day15(input) {
