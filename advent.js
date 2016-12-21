@@ -50,8 +50,246 @@
 		window.onload = () => refresh({value: input.value});
 
 		function refresh(e) {
-			div.innerHTML = day19(e.value);
+			div.innerHTML = day21(e.value);
 		}
+		
+		function day21(input) {
+			var swapPos = function(str, x, y) {
+				var a1 = Math.min(x, y),
+					a2 = Math.max(x, y);
+
+				return    str.substr(0, a1)
+						+ str[a2]
+						+ str.substr(a1 + 1, a2 - a1 - 1)
+						+ str[a1]
+						+ str.substr(a2 + 1);
+			};
+
+			var swapLetter = function(str, x, y) {
+				return str.replace(new RegExp(x, 'g'), '#')
+						  .replace(new RegExp(y, 'g'), x)
+						  .replace(/#/g, y);
+			};
+
+			var rotate = function(str, direction, steps, rev) {
+				var steps = steps % str.length;
+
+				if( direction == "left" && !rev || direction == "right" && rev ) {
+					return str.substr(steps) + str.substr(0, steps);
+				} else {
+					return str.substr(str.length - steps) + str.substr(0, str.length - steps);
+				}
+			};
+
+			var rotateAroundLetter = function(str, letter, rev) {
+				var ind = str.indexOf(letter);
+
+				var rotations     = [1,2,3,4,6,7,0,1];
+				var rotations_rev = [7,7,2,6,1,5,0,4];
+
+				var rots = rev ? rotations_rev[ind] : rotations[ind];
+
+				return rotate(str, "right", rots);
+			};
+
+			var reverse = function(str, x, y) {
+				var a1 = Math.min(x, y),
+					a2 = Math.max(x, y);
+
+				return str.substr(0, a1)
+					 + str.substr(a1, a2 - a1 + 1).split('').reverse().join('')
+					 + str.substr(a2 + 1);
+			};
+
+			var move = function(str, x, y) {
+				var c = str[x];
+				var tmp = str.substr(0, x) + str.substr(x + 1);
+				return tmp.substr(0, y) + c + tmp.substr(y);
+			};
+
+			var processLine = function(line, word, rev) {
+				var parts = line.split(' ');
+				if(line.startsWith("swap position")) {
+					return swapPos(word, parseInt(parts[2]), parseInt(parts[5]));
+				}
+				else if(line.startsWith("swap letter")) {
+					return swapLetter(word, parts[2], parts[5]);
+				}
+				else if(line.startsWith("rotate based")) {
+					return rotateAroundLetter(word, parts[6], rev);
+				}
+				else if(line.startsWith("rotate")) {
+					return rotate(word, parts[1], parseInt(parts[2]), rev);
+				}
+				else if(line.startsWith("reverse")) {
+					return reverse(word, parseInt(parts[2]), parseInt(parts[4]));
+				}
+				else if(line.startsWith("move")) {
+					if(rev) {
+						return move(word, parseInt(parts[5]), parseInt(parts[2]));
+					}
+					else {
+						return move(word, parseInt(parts[2]), parseInt(parts[5]));
+					}					
+				}
+				else {
+					throw new Exception("Wrong command!");
+				}
+			};
+
+			var words1, words2;
+
+			var p1 = function(input) {
+				var word = 'abcdefgh';
+				var lines = input.trim().split('\n');
+				words1 = [word];
+
+				for(var i in lines) {
+					var l = lines[i];
+					word = processLine(lines[i], word, false);
+					words1.push(word);
+				}
+
+				return word;
+			};
+
+			var p2 = function(input) {
+				var word = 'fbgdceah';
+				var lines = input.trim().split('\n');
+				words2 = [word];
+
+				for(var i = lines.length - 1; i >= 0; i--) {
+					var l = lines[i];
+					word = processLine(lines[i], word, true);
+					words2.push(word);
+				}
+
+				return word;
+			};
+
+			return p2(input);
+
+			// p1(input);
+			// p2(input);
+
+			// words2.reverse();
+
+			// for(var i = words2.length - 1; i >= 0; i--) {
+			// 	if(words1[i] != words2[i]) {
+			// 		console.log(i);
+			// 		console.log(words1[i], words2[i]);
+			// 		break;
+			// 	}
+			// }
+
+			var testCases = [];
+
+			// testCases.push(createTestCase(swapPos, '1432', '1234', 1, 3));
+			// testCases.push(createTestCase(swapPos, '1432', '1234', 3, 1));
+			// testCases.push(createTestCase(swapPos, 'cweasdzxq', 'qweasdzxc', 0, 8));
+			// testCases.push(createTestCase(swapPos, 'qweacdzxs', 'qweasdzxc', 4, 8));
+			// testCases.push(createTestCase(swapPos, 'sweaqdzxc', 'qweasdzxc', 4, 0));
+
+			// testCases.push(createTestCase(swapLetter, 'cweasdzxq', 'qweasdzxc', 'q', 'c'));
+			// testCases.push(createTestCase(swapLetter, 'qqwwssaad', 'qqwwaassd', 'a', 's'));
+			// testCases.push(createTestCase(swapLetter, 'qqwwsasad', 'qqwwasasd', 'a', 's'));
+
+			// testCases.push(createTestCase(rotate, 'dqweas', 'asdqwe', 'left', 2));
+			// testCases.push(createTestCase(rotate, 'weasdq', 'asdqwe', 'right', 2));
+
+			testCases.push(createTestCase(rotateAroundLetter, 'habcdefg', 'abcdefgh', 'a', false));
+			testCases.push(createTestCase(rotateAroundLetter, 'efghabcd', 'abcdefgh', 'd', false));
+			testCases.push(createTestCase(rotateAroundLetter, 'cdefghab', 'abcdefgh', 'e', false));
+			testCases.push(createTestCase(rotateAroundLetter, 'abcdefgh', 'abcdefgh', 'g', false));
+			testCases.push(createTestCase(rotateAroundLetter, 'habcdefg', 'abcdefgh', 'h', false));
+
+			testCases.push(createTestCase(rotateAroundLetter, 'abcdefgh', rotateAroundLetter('abcdefgh', 'a', false), 'a', true));
+			testCases.push(createTestCase(rotateAroundLetter, 'abcdefgh', rotateAroundLetter('abcdefgh', 'b', false), 'b', true));
+			testCases.push(createTestCase(rotateAroundLetter, 'abcdefgh', rotateAroundLetter('abcdefgh', 'c', false), 'c', true));
+			testCases.push(createTestCase(rotateAroundLetter, 'abcdefgh', rotateAroundLetter('abcdefgh', 'd', false), 'd', true));
+			testCases.push(createTestCase(rotateAroundLetter, 'abcdefgh', rotateAroundLetter('abcdefgh', 'e', false), 'e', true));
+			testCases.push(createTestCase(rotateAroundLetter, 'abcdefgh', rotateAroundLetter('abcdefgh', 'f', false), 'f', true));
+			testCases.push(createTestCase(rotateAroundLetter, 'abcdefgh', rotateAroundLetter('abcdefgh', 'g', false), 'g', true));
+			testCases.push(createTestCase(rotateAroundLetter, 'abcdefgh', rotateAroundLetter('abcdefgh', 'h', false), 'h', true));
+
+			// testCases.push(createTestCase(reverse, 'sadqwe', 'asdqwe', 0, 1));
+			// testCases.push(createTestCase(reverse, 'ewqdsa', 'asdqwe', 0, 5));
+			// testCases.push(createTestCase(reverse, 'asdewq', 'asdqwe', 3, 5));
+			// testCases.push(createTestCase(reverse, 'aswqde', 'asdqwe', 2, 4));
+
+			// testCases.push(createTestCase(move, 'asqwde', 'asdqwe', 2, 4));
+			// testCases.push(createTestCase(move, 'dasqwe', 'asdqwe', 2, 0));
+			// testCases.push(createTestCase(move, 'sdqwea', 'asdqwe', 0, 5));
+			
+			// testCases.push(createTestCase(processInput, 'decab', 'swap position 4 with position 0\nswap letter d with letter b\nreverse positions 0 through 4\nrotate left 1 step\nmove position 1 to position 4\nmove position 3 to position 0\nrotate based on position of letter b\nrotate based on position of letter d', 'abcde'));
+			
+			runTests(testCases);
+		}
+
+		function day20(input) {
+
+			var parseInput = function(input) {
+				var ranges = input.split('\n');
+				var res = [];
+				for(var i in ranges) {
+					var r = ranges[i].split('-');
+					res.push([parseInt(r[0]), parseInt(r[1])]);
+				}
+
+				return res;
+			};
+
+
+			var p1 = function(input) {
+				var ranges = parseInput(input);
+
+				ranges.sort((a, b) => a[0] - b[0]);
+				console.log(ranges);
+
+				if( ranges[0][0] > 0 ) return 0;
+
+				for(var i = 1; i < ranges.length; i++) {
+					if(ranges[i][0] > ranges[i - 1][1] + 1) {
+						return ranges[i - 1][1] + 1;
+					}
+				}
+
+				return ranges[ranges.length - 1][1];
+			};
+
+			var p2 = function(input, max) {
+				var ranges = parseInput(input);
+
+				ranges.sort((a, b) => a[0] - b[0]);
+				var currentCount = max - ranges[0][1] + ranges[0][0] - 1;
+				var rightBound = ranges[0][1];
+
+				for(var i = 0; i < ranges.length; i++) {
+					var r = ranges[i];
+					if(r[0] < rightBound) {
+						if(r[1] > rightBound) {
+							currentCount = currentCount - r[1] + rightBound;
+							rightBound = r[1];
+						} //else the whole range overlaps with the previous, so no removal
+					} else {
+						currentCount = currentCount - r[1] + r[0] - 1;
+						rightBound = r[1];
+					}
+				}
+
+				return currentCount;
+			};
+
+
+			var testCases = [];
+
+			testCases.push(createTestCase(p1, 3, '5-8\n0-2\n4-7'));
+			testCases.push(createTestCase(p2, 2, '5-8\n0-2\n4-7', 10));
+			
+			// runTests(testCases);
+			return p2(input, 4294967296);
+		}
+
 		function day19(input) {
 			var p01 = function(elves) {
 				var arr = [];
