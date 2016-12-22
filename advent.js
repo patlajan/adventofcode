@@ -2,27 +2,19 @@
 		var input = document.getElementById("input");
 		div.innerHTML = "asd";
 		
-		function printMatrix(matrix, emptySymbol = ' ', fullSymbol = '#' ) {
+		function printMatrix(matrix, display ) {
 			var str = '';
 			var count = 0;
 			for(var i in matrix) {
 				for(var j in matrix[i]) {
-					if( matrix[i][j] === true ) {
-						count++;
-						str += fullSymbol;
-					}
-					else if( matrix[i][j] === false ){
-						str += emptySymbol;
-					}
-					else {
-						str += matrix[i][j];
-					}
+					str += display(matrix[i][j]) + ' ';
+					count++;
 				}
 
 				str += '<br>\n';
 			}
 
-			return str + 'Count: ' + count + '<br>\n';
+			return str + matrix[0].length + ' x ' + matrix.length + ', total: ' + count + '<br>\n';
 		}
 
 		var createTestCase = function(method, expectedOutput, inputParams) {
@@ -50,9 +42,223 @@
 		window.onload = () => refresh({value: input.value});
 
 		function refresh(e) {
-			div.innerHTML = day21(e.value);
+			div.innerHTML = day22(e.value);
 		}
 		
+		function day22(input) {
+
+
+			var p1 = function(input) {
+
+				var processInput = function(input){
+					var nodes = [];
+					var reg = /\/dev\/grid\/node-x(\d+)-y(\d+)\s+\d+\w\s+(\d+)\w\s+(\d+)/;
+					var lines = input.trim().split('\n');
+					for(var i = 2; i < lines.length; i++) {
+						var [_, x, y, used, available] = reg.exec(lines[i]);
+						nodes.push({
+							x: parseInt(x),
+							y: parseInt(y),
+							used: parseInt(used),
+							available: parseInt(available)
+						});
+					}
+
+					return nodes;
+				};
+
+				var nodes = processInput(input);
+				var counted = {};
+				var count = 0;
+				for(var i = 0; i < nodes.length; i++) {
+					var n1 = nodes[i];
+					if(n1.used == 0)
+						continue;
+
+					for(var j = 0; j < nodes.length; j++) {
+						var n2 = nodes[j];
+						if(n1.used <= n2.available &&
+							!counted[n1.x + ',' + n1.y + ',' + n2.x + ',' + n2.y]) {
+							counted[n1.x + ',' + n1.y + ',' + n2.x + ',' + n2.y] = true;
+							count++;
+						}
+					}
+				}
+
+				return count;
+			};
+
+			var p2 = function(input) {
+				
+				var processInput = function(input){
+					var nodes = [];
+					var empty = {
+							x: -1,
+							y: -1,
+							isTarget: false
+						};
+					var reg = /\/dev\/grid\/node-x(\d+)-y(\d+)\s+\d+\w\s+(\d+)\w\s+(\d+)/;
+					var lines = input.trim().split('\n');
+					for(var i = 0; i < lines.length; i++) {
+						var [_, x, y, used, available] = reg.exec(lines[i]);
+						if(!nodes[y])
+							nodes[y] = [];
+
+						nodes[y][x] = {
+							used: parseInt(used),
+							available: parseInt(available),
+							isTarget: false
+						};
+
+						if(used == 0) {
+							empty.x = x;
+							empty.y = y;
+						}
+					}
+
+					return {nodes: nodes, empty: empty};
+				};
+
+				var findPossibleMoves = function(nodes, x, y) {
+					var moves = [];
+					if( x > 0 && nodes[y][x-1].used <= nodes[y][x].available) {
+						moves.push({
+							fromX: x - 1,
+							fromY: y,
+							toX  : x,
+							toY  : y
+						});
+					}
+					if( y > 0 && nodes[y - 1][x].used <= nodes[y][x].available) {
+						moves.push({
+							fromX: x,
+							fromY: y - 1,
+							toX  : x,
+							toY  : y
+						});
+					}
+					if( x + 1 < nodes[y].length && nodes[y][x+1].used <= nodes[y][x].available) {
+						moves.push({
+							fromX: x + 1,
+							fromY: y,
+							toX  : x,
+							toY  : y
+						});
+					}
+					if( y + 1 < nodes.length && nodes[y + 1][x].used <= nodes[y][x].available) {
+						moves.push({
+							fromX: x,
+							fromY: y + 1,
+							toX  : x,
+							toY  : y
+						});
+					}
+					return moves;
+				};
+
+				var snapshotState = function(nodes) {
+					return printMatrix(nodes, function(item){
+							if(item.isTarget) return 'G';
+							if(item.used > 100) return '#';
+							if(item.used == 0) return '_';
+							return '.';
+						});
+
+					var state = '';
+					for(var y = 0; y < nodes.length; y++) {
+						for (var x = 0; x < nodes[y].length; x++) {
+							state += nodes[y][x].available + '/'
+							+ nodes[y][x].used + '/'
+							+ nodes[y][x].isTarget + '; ';
+						}
+						state += '\n';
+					}
+					return state;
+				}
+
+				var performMove = function(nodeState, move) {
+					var nFrom = nodeState.nodes[move.fromY][move.fromX];
+					var nTo = nodeState.nodes[move.toY][move.toX];
+
+					var state = JSON.parse(JSON.stringify({from: nFrom, to: nTo}));
+
+					nTo.used += nFrom.used;
+					nTo.available -= nFrom.used;
+					nFrom.available += nFrom.used;
+					nFrom.used = 0;
+
+					if(nFrom.isTarget) {
+						nFrom.isTarget = false;
+						nTo.isTarget = true;
+					}
+
+					nodeState.emptyNode.x = move.fromX;
+					nodeState.emptyNode.y = move.fromY;
+
+					return state;
+				};
+
+				var reverseMove = function(nodeState, move, state) {
+					nodeState.nodes[move.fromY][move.fromX] = state.from;
+					nodeState.nodes[move.toY][move.toX] = state.to;
+
+					nodeState.emptyNode.x = move.toX;
+					nodeState.emptyNode.y = move.toY;
+				};
+
+
+				var BFS = function(nodes, emptyNode) {
+
+					// 216 -- too low
+
+					nodes[0][nodes[0].length - 1].isTarget = true;
+
+					var visited = {};
+					var q = [JSON.parse(JSON.stringify({emptyNode: emptyNode, nodes: nodes, moves: 0}))];
+					visited[snapshotState(nodes)] = true;
+
+					while(q.length > 0) {
+						var state = q.shift();
+
+						// console.log(printMatrix(state.nodes, function(item){
+						// 	if(item.isTarget) return 'G';
+						// 	if(item.used > 100) return '#';
+						// 	if(item.used == 0) return '_';
+						// 	return '.';
+						// }));
+
+						if(state.emptyNode.x == state.nodes[0].length - 2 && state.emptyNode.y == 0) {
+							return state.moves;
+						}
+					
+						var moves = findPossibleMoves(state.nodes, state.emptyNode.x, state.emptyNode.y);
+
+						for(var i in moves) {
+							var st = performMove(state, moves[i]);
+							state.moves++;
+							var snap = snapshotState(state.nodes);
+							if(!visited[snap]) {
+								visited[snap] = true;
+								q.push(JSON.parse(JSON.stringify(state)));
+							}
+							reverseMove(state, moves[i], st);
+							state.moves--;
+						}
+
+					}
+
+					return false;
+				};
+
+				var inp = processInput(input);
+				var nodes = inp.nodes;
+				var emptyNode = inp.empty;
+				return BFS(nodes, emptyNode);
+			};
+
+			return p2(input);
+		}
+
 		function day21(input) {
 			var swapPos = function(str, x, y) {
 				var a1 = Math.min(x, y),
