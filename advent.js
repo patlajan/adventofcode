@@ -42,9 +42,81 @@
 		window.onload = () => refresh({value: input.value});
 
 		function refresh(e) {
-			div.innerHTML = day22(e.value);
+			div.innerHTML = day23(e.value);
 		}
 		
+		
+		function day23(input) {
+			var registers = { a: 7, b: 0, c: 0, d: 0 };
+			var currentInstr = 0;
+			var instructions = input.trim().split('\n');
+
+			var jumpTo = function(instr) {
+				currentInstr += instr;
+			};
+
+			var resolveArg = function(arg) {
+				if(isNaN(arg))
+					return registers[arg];
+
+				return parseInt(arg);
+			};
+
+			var lastd = 0;
+			var tglMap = {
+				inc: 'dec',
+				dec: 'inc',
+				tgl: 'inc',
+
+				cpy: 'jnz',
+				jnz: 'cpy'
+			};
+
+			var ops = {
+				cpy: function( x, y ) {
+					if( undefined != registers[y] )
+						registers[y] = resolveArg(x);
+					jumpTo(1);
+				},
+				inc: function(x) {
+					if( undefined != registers[x] )
+						registers[x] += 1;
+					jumpTo(1);
+				},
+				dec: function(x) {
+					if( undefined != registers[x] )
+						registers[x] -= 1;
+					jumpTo(1);
+				},
+				jnz: function(x, y) {
+					if( resolveArg(x) != 0 ) {
+						jumpTo(resolveArg(y));
+					} else {
+						jumpTo(1);
+					}
+				},
+				tgl: function(x) { 
+					var i = resolveArg(x) + currentInstr;
+					if( i < instructions.length )
+						instructions[i] = tglMap[instructions[i].substr(0, 3)] + instructions[i].substr(3);
+					jumpTo(1);
+				}
+			};
+
+			var reg = /(\w{3}) (-*\w*) *(-*\w*)/;
+			while( currentInstr < instructions.length) {
+				console.log(currentInstr, instructions[currentInstr], registers);
+				var res = reg.exec(instructions[currentInstr]);
+				var name = res[1];
+				var args = res.splice(2);
+				ops[name].apply(null, args);
+			}
+
+			//part 2 - 479006783
+			return registers.a;
+		}
+
+
 		function day22(input) {
 
 
@@ -89,6 +161,21 @@
 			};
 
 			var p2 = function(input) {
+
+				var reg = /\/dev\/grid\/node-x(\d+)-y(\d+)\s+\d+\w\s+(\d+)\w\s+(\d+)/;
+				var lines = input.trim().split('\n');
+				var maxUsed = 0, minTotal = 1000;
+				for(var i = 0; i < lines.length; i++) {
+					var [_, x, y, used, available] = reg.exec(lines[i]);
+					used = parseInt(used);
+					total = used + parseInt(available);
+					if(used < 100)
+						maxUsed = Math.max(maxUsed, used);
+
+					if(total < 300)
+						minTotal = Math.min(minTotal, total);
+				}
+				debugger;
 				
 				var processInput = function(input){
 					var nodes = [];
