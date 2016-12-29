@@ -17,7 +17,7 @@
 			return str + matrix[0].length + ' x ' + matrix.length + ', total: ' + count + '<br>\n';
 		}
 
-		var createTestCase = function(method, expectedOutput, inputParams) {
+		function createTestCase(method, expectedOutput, inputParams) {
 			return {
 				method: method,
 				expectedOutput: expectedOutput,
@@ -25,7 +25,7 @@
 			};
 		}
 
-		var runTests = function(testCases) {
+		function runTests(testCases) {
 				for(var i in testCases) {
 					var test = testCases[i];
 					var res = test.method.apply(null, test.arguments);
@@ -39,12 +39,232 @@
 				}
 		}
 
+		function permutations(arr, callback) {
+			var perm = function(arr, used, res, ind) {
+				if( ind == arr.length ) {
+					callback(res);
+					return;
+				}
+
+				for(var i = 0; i < used.length; i++) {
+					if(!used[i]) {
+						res.push(arr[i]);
+						used[i] = true;
+
+						perm(arr, used, res, ind + 1);
+
+						used[i] = false;
+						res.pop();
+					}
+				}
+			};
+
+			perm(arr, Array(arr.length), [], 0);
+		}
+
 		window.onload = () => refresh({value: input.value});
 
 		function refresh(e) {
-			div.innerHTML = day23(e.value);
+			div.innerHTML = day25(e.value);
 		}
 		
+		
+		function day25(input) {
+			var registers = { a: 0, b: 0, c: 0, d: 0 };
+			var currentInstr = 0;
+			var instructions = input.trim().split('\n');
+			var outStr = '';
+
+			var jumpTo = function(instr) {
+				currentInstr += instr;
+			};
+
+			var resolveArg = function(arg) {
+				if(isNaN(arg))
+					return registers[arg];
+
+				return parseInt(arg);
+			};
+
+			var lastd = 0;
+			var tglMap = {
+				inc: 'dec',
+				dec: 'inc',
+				tgl: 'inc',
+
+				cpy: 'jnz',
+				jnz: 'cpy'
+			};
+
+			var ops = {
+				cpy: function( x, y ) {
+					if( undefined != registers[y] )
+						registers[y] = resolveArg(x);
+					jumpTo(1);
+				},
+				inc: function(x) {
+					if( undefined != registers[x] )
+						registers[x] += 1;
+					jumpTo(1);
+				},
+				dec: function(x) {
+					if( undefined != registers[x] )
+						registers[x] -= 1;
+					jumpTo(1);
+				},
+				jnz: function(x, y) {
+					if( resolveArg(x) != 0 ) {
+						jumpTo(resolveArg(y));
+					} else {
+						jumpTo(1);
+					}
+				},
+				tgl: function(x) { 
+					var i = resolveArg(x) + currentInstr;
+					if( i < instructions.length )
+						instructions[i] = tglMap[instructions[i].substr(0, 3)] + instructions[i].substr(3);
+					jumpTo(1);
+				},
+				out: function(x) { 
+					outStr += resolveArg(x);
+					jumpTo(1);
+				}
+			};
+
+			var reg = /(\w{3}) (-*\w*) *(-*\w*)/;
+
+			for(var i = 0; i <= 2730; i++) {
+				registers.b = registers.c = registers.d = 0;
+				outStr = '';
+				registers.a = i;
+				var sc = 1000000;
+				while( currentInstr < instructions.length && outStr.length < 36 && sc-- > 0) {
+					// console.log(currentInstr, instructions[currentInstr], registers);
+					var res = reg.exec(instructions[currentInstr]);
+					var name = res[1];
+					var args = res.splice(2);
+					ops[name].apply(null, args);
+				}
+
+				console.log(i, outStr);
+				if( outStr.startsWith( '010101010101' ) ) {
+					//0 - 001001111001001001111001001001111001
+					//1 - 101001111001101001111001101001111001
+					console.log(i, outStr);
+					return i;
+				}
+			}		
+
+			//2730 -- to high	
+
+			return false;
+		}
+
+		function day24(input) {
+			var iterateMatrix = function(matrix, callback) {
+				for(var i = 0 ; i < matrix.length; i++) {
+					for(var j = 0; j < matrix[i].length; j++) {
+						callback(matrix[i][j], j, i);
+					}
+				}
+			};
+
+			var parseInput = function(input) {
+				input = input.trim().split('\n');
+				var res = [];
+				for(var i in input) {
+					var row = [];
+					for(var j in input[i]) {
+						row.push(input[i][j]);
+					}
+					res.push(row);
+				}
+
+				return res;
+			};
+
+			var shortestPathBetweenTwoNodes = function(matrix, node1X, node1Y, node2X, node2Y) {
+				
+				var visited = {};
+				var q = [{x:node1X, y: node1Y, len: 0}];
+				visited[node1X+','+node1Y] = true;
+
+				while(q.length) {
+					var currentNode = q.shift();
+					if(currentNode.x == node2X && currentNode.y == node2Y)
+						return currentNode.len;
+
+					var indices = [[-1, 0],[1, 0], [0, -1], [0, 1]];
+					for(var i in indices) {
+						var x = currentNode.x + indices[i][0];
+						var y = currentNode.y + indices[i][1];
+						if(x >= 0 && y >= 0 && y < matrix.length && x < matrix[0].length
+						&& !visited[x+','+y]
+						&& matrix[y][x] != '#'){
+							visited[x+','+y] = true;
+							q.push({x: parseInt(x), y: parseInt(y), len: currentNode.len + 1});
+						}
+					}
+				}
+
+				return false;
+			};
+
+			var matrix = parseInput(input);
+			var endNodes = [];
+
+			iterateMatrix(matrix, function(el, x, y) {
+				if(el != '.' && el != '#') {
+					endNodes.push([x, y, el]);
+				}
+			});
+
+
+			var shortestPaths = Array(endNodes.length);
+			for(var i in endNodes) {
+				for(var j in endNodes) {
+					var p = shortestPathBetweenTwoNodes(matrix, endNodes[i][0], endNodes[i][1], endNodes[j][0], endNodes[j][1]);
+					if(!shortestPaths[endNodes[i][2]])
+						shortestPaths[endNodes[i][2]] = Array(endNodes.length);
+
+					shortestPaths[endNodes[i][2]][endNodes[j][2]] = p;
+				}
+			}
+			
+			var findTotalPath = function(path, pathLengths) {
+				var sum = 0;
+				for(var i = 1; i < path.length; i ++) {
+					sum += pathLengths[path[i-1]][path[i]];
+				}
+
+				return sum;
+			};
+
+			endNodes = endNodes.map((a) => a[2]);
+
+			var p1 = function(input) {
+			var minPath = Number.MAX_VALUE;
+				permutations(endNodes, function(path) {
+					if(path[0] == 0)
+						minPath = Math.min(minPath, findTotalPath(path, shortestPaths));
+				});
+
+				return minPath;
+			};
+			
+			var p2 = function(input) {
+				var minPath = Number.MAX_VALUE;
+				permutations(endNodes, function(path) {
+					if(path[0] == 0)
+						minPath = Math.min(minPath, findTotalPath(path, shortestPaths) + shortestPaths[path[path.length - 1]][0]);
+				});
+
+				return minPath;
+			};
+
+			console.log(p1(input));
+			console.log(p2(input));
+		}
 		
 		function day23(input) {
 			var registers = { a: 7, b: 0, c: 0, d: 0 };
